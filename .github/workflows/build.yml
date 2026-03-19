@@ -1,0 +1,45 @@
+name: IOS 3NGINE Master Generator
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Architecture Builder
+        run: brew install xcodegen
+          
+      - name: Generate Xcode Project
+        run: |
+          cat << 'EOF' > project.yml
+          name: IOS_3NGINE
+          options:
+            bundleIdPrefix: com.fox
+          targets:
+            IOS_3NGINE:
+              type: application
+              platform: iOS
+              deploymentTarget: "15.0"
+              sources: [.]
+              settings:
+                CODE_SIGNING_ALLOWED: NO
+                CODE_SIGNING_REQUIRED: NO
+          EOF
+          xcodegen generate
+          
+      - name: Compile and Bundle IPA
+        run: |
+          xcodebuild archive -project IOS_3NGINE.xcodeproj -scheme IOS_3NGINE -configuration Release -archivePath build/App.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          mkdir -p Payload
+          cp -r build/App.xcarchive/Products/Applications/*.app Payload/
+          
+          # Inject your raw payload files into the core Sandbox
+          cp *.txt Payload/*.app/ 2>/dev/null || true
+          
+          zip -r IOS_3NGINE_Final.ipa Payload
+          
+      - name: Upload Final Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IOS-3NGINE-IPA
+          path: IOS_3NGINE_Final.ipa
