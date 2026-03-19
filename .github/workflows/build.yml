@@ -33,8 +33,10 @@ jobs:
           mkdir -p Payload
           cp -r build/App.xcarchive/Products/Applications/*.app Payload/
           
-          # Inject your raw payload files into the core Sandbox
-          cp *.txt Payload/*.app/ 2>/dev/null || true
+          # Force injects the text files into the App sandbox bundle
+          cp *.txt Payload/*.app/ 2>/dev/null |
+
+| true
           
           zip -r IOS_3NGINE_Final.ipa Payload
           
